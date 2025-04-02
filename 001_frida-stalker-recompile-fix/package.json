@@ -1,0 +1,13 @@
+{
+  "name": "frida-stalker-recompile-fix",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {},
+  "devDependencies": {
+    "@types/frida-gum": "^18.7.2",
+    "@types/node": "^18.19.3",
+    "frida-compile": "^16.4.1"
+  }
+}

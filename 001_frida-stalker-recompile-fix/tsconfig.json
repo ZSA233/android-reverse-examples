@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "es2022",
+        "target": "es2021",
+        "lib": [
+            "es2021"
+        ],
+        "allowJs": true,
+        "noEmit": true,
+        "strict": true,
+        "esModuleInterop": true,
+        "baseUrl": "."
+    }
+}
