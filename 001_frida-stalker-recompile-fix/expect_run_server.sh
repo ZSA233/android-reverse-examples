@@ -1,7 +1,7 @@
 #!/usr/bin/expect -f
 set timeout 30
 set FRIDA_SERVER_BIN /data/local/tmp/frida-server
-set SERVER_PORT 6666
+set SERVER_PORT 27042
 
 exec adb forward tcp:$SERVER_PORT tcp:$SERVER_PORT
 

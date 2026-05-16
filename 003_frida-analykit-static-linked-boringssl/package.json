@@ -1,0 +1,21 @@
+{
+  "name": "frida-analykit-static-linked-boringssl",
+  "version": "1.0.0",
+  "description": "frida-analykit v2 static-linked BoringSSL keylog example",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "build": "frida-compile index.ts -o _agent.js -c",
+    "watch": "frida-compile index.ts -o _agent.js -w"
+  },
+  "dependencies": {
+    "@zsa233/frida-analykit-agent": "2.1.4"
+  },
+  "devDependencies": {
+    "@types/frida-gum": "^18.7.2",
+    "@types/node": "^18.19.3",
+    "frida-compile": "^19.0.4",
+    "typescript": "^5.8.3"
+  }
+}

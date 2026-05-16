@@ -1,11 +1,11 @@
-__pycache__
+__pycache__/
 /frida-analykit
-/data
-/logs
-/node_modules
+/data/
+/logs/
+/node_modules/
 /_agent.js
+/config.toml
+/.device-test*.toml
 /config.yml
-/package*.json
 /ptpython_*.sh
-/tsconfig.json
 .DS_Store

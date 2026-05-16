@@ -1,10 +1,7 @@
-import './frida-analykit/script/rpc.js'
-
-import { SSLTools } from './frida-analykit/script/net/ssl.js'
-import { help } from './frida-analykit/script/helper.js'
-
+import "@zsa233/frida-analykit-agent/rpc"
+import { SSLTools } from "@zsa233/frida-analykit-agent/ssl"
 
 setImmediate(() => {
-    SSLTools.attachLogSecret()
-    help.$error(`[SSLTools.attachLogSecret] ok`)
+    const attached = SSLTools.attachLibsslKeylogFunc("libssl")
+    console.error(`[SSLTools.attachLibsslKeylogFunc] attached=${attached}`)
 })

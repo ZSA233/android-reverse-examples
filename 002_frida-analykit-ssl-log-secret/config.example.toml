@@ -1,0 +1,28 @@
+app = "com.frida_analykit.ssl_log_secret"
+jsfile = "_agent.js"
+
+[server]
+path = "/data/local/tmp/frida-server"
+host = "127.0.0.1:27042"
+# device = ""
+# version = "16.6.6"
+
+[agent]
+datadir = "./data/"
+stdout = "./logs/outerr.log"
+stderr = "./logs/outerr.log"
+
+[script.rpc]
+batch_max_bytes = 8388608
+
+[script.repl]
+globals = [
+  "Process",
+  "Module",
+  "Memory",
+  "Java",
+  "SSLTools",
+]
+
+[script.nettools]
+output_dir = "./data/nettools/"

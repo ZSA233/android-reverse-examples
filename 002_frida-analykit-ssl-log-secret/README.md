@@ -2,7 +2,8 @@
 
 ## 工具
 
-- [frida-analykit](https://github.com/ZSA233/frida-analykit.git)
+- [frida-analykit v2.1.4](https://github.com/ZSA233/frida-analykit/tree/v2.1.4)
+- [@zsa233/frida-analykit-agent 2.1.4](https://www.npmjs.com/package/@zsa233/frida-analykit-agent/v/2.1.4)
 - [wireshark](https://www.wireshark.org/)
 - [测试资源：002_frida-analykit-ssl-log-secret](https://github.com/ZSA233/android-reverse-examples/tree/main/002_frida-analykit-ssl-log-secret)
 
@@ -335,7 +336,7 @@ setImmediate(() => {
 
 > frida提供了一套rpc的通信实现：允许脚本中使用rpc.exports来注册导出函数定义，并且使用send和recv来通信：(frida-analykit实现了这一套，按照[文档配置使用](#工具)即可)
 > 
-> frida-analykit的导出函数注册位于 `frida-analykit/script/rpc.ts`
+> frida-analykit v2 的 agent RPC 入口由 `@zsa233/frida-analykit-agent/rpc` 提供。
 
 
 
@@ -369,7 +370,7 @@ declare function send(message: any, data?: ArrayBuffer | number[] | null): void;
 
 - 导出的函数可以在go, python, nodejs对应的sdk中引用，下面以python的文档说明：
 
-> frida-analykit的python的rpc接受的数据代理实现位于 `frida-analykit/agent/rpc/resolver.py`
+> frida-analykit v2 的 Python RPC 处理位于 `src/frida_analykit/rpc/`。
 
 ```py
 
@@ -423,31 +424,39 @@ class Script:
 
 <img src="./docs/004-wireshark选择捕获热点网卡的流量.png" alt="wireshark选择捕获热点网卡的流量" height="300" /><a name="图4">图4</a>
 
-- 拉取`frida-analykit`，并且[按照文档配置好环境](https://github.com/ZSA233/frida-analykit?tab=readme-ov-file#%E7%94%A8%E6%B3%95)，配置好yaml文件，bootup-server启动frida-server。
-```yaml
+- 安装并固定当前示例使用的 frida-analykit v2.1.4：
 
-app: com.frida_analykit.ssl_log_secret
-jsfile: _agent.js
-
-server:
-  servername: /data/local/tmp/frida-server
-  host: 127.0.0.1:6666
-  device: 
-
-agent:
-  datadir: ./data/
-  stdout: ./logs/outerr.log
-  stderr: ./logs/outerr.log
-
-
-script:
-  nettools:
-    # 要输出sslkey.log文件的路径，[图1]位置选择该文件
-    ssl_log_secret: ./data/nettools/sslkey/
-
+```shell
+uv tool install "git+https://github.com/ZSA233/frida-analykit@v2.1.4"
+frida-analykit env create --frida-version 16.6.6 --name frida-16.6.6-v2.1.4
+frida-analykit env shell frida-16.6.6-v2.1.4
 ```
 
-- `./ptpython_spawn.sh`来启动脚本`index.ts`
+这里的 `16.6.6` 需要和设备端 `frida-server --version` 对齐；当前真机回归使用的是 `16.6.6`。
+
+- 安装 agent 依赖并准备配置：
+
+```shell
+npm install
+cp config.example.toml config.toml
+```
+
+按需修改 `config.toml` 中的 `server.path`、`server.host`、`server.device`。`script.nettools.output_dir` 默认是 `./data/nettools/`，本示例写出的 keylog 位于 `./data/nettools/libssl/sslkey.log`。
+
+- 检查并启动设备端 server，然后注入：
+
+```shell
+frida-analykit doctor --config config.toml
+frida-analykit doctor fix --config config.toml
+frida-analykit server boot --config config.toml
+frida-analykit spawn --config config.toml --build --install
+```
+
+也可以直接执行自动化真机验证：
+
+```shell
+../tools/device_test_examples.py --examples 002 --frida-server-path /data/local/tmp/frida-server
+```
 
 - 点击"发起请求"按钮，发起https请求，
 

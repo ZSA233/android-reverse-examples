@@ -4,7 +4,9 @@
   "description": "",
   "private": true,
   "main": "index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "frida-compile index.ts -o _agent.js -c"
+  },
   "devDependencies": {
     "@types/frida-gum": "^18.7.2",
     "@types/node": "^18.19.3",

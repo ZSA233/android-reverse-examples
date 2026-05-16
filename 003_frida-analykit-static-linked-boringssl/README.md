@@ -2,7 +2,8 @@
 
 ## 工具
 
-- [frida-analykit](https://github.com/ZSA233/frida-analykit.git)
+- [frida-analykit v2.1.4](https://github.com/ZSA233/frida-analykit/tree/v2.1.4)
+- [@zsa233/frida-analykit-agent 2.1.4](https://www.npmjs.com/package/@zsa233/frida-analykit-agent/v/2.1.4)
 - [wireshark](https://www.wireshark.org/)
 - [测试资源：003_frida-analykit-static-linked-boringssl](https://github.com/ZSA233/android-reverse-examples/tree/main/003_frida-analykit-static-linked-boringssl)
 
@@ -413,10 +414,10 @@ for (const code of adrpResults) {
 
 **上面两个点可以通过下面的实现来进行优化：**
 
-1. 理论上adrp+add这种编码方式设计的立即数是能够寻址~±4G空间，但实际应用在一个elf中，他就不太可能占用这么大的内存，所以对于imm立即数，不管是（正值）正页差还是（负值）负页差，在区间内他就必然会存在固定的位，所以我们可以分开两个区间（正/负区间）：计算每个区间固定的imm高位用来筛选，这样我们就能从n复杂度的遍历页数内存扫描缩小到遍历常量2次内存扫描。[frida-analykit/script/elf/xref.ts](https://github.com/ZSA233/frida-analykit/blob/main/script/elf/xref.ts#L168)
+1. 理论上adrp+add这种编码方式设计的立即数是能够寻址~±4G空间，但实际应用在一个elf中，他就不太可能占用这么大的内存，所以对于imm立即数，不管是（正值）正页差还是（负值）负页差，在区间内他就必然会存在固定的位，所以我们可以分开两个区间（正/负区间）：计算每个区间固定的imm高位用来筛选，这样我们就能从n复杂度的遍历页数内存扫描缩小到遍历常量2次内存扫描。[@zsa233/frida-analykit-agent/src/elf/xref.ts](https://github.com/ZSA233/frida-analykit/blob/v2.1.4/packages/frida-analykit-agent/src/elf/xref.ts)
 
 
-2. 使用`CModule`嵌入c代码，对预匹配的结果用c直接进行筛选，避免经过上下文切换交由js过滤。 [frida-analykit/script/cmodule/scan_adrp.ts](https://github.com/ZSA233/frida-analykit/blob/main/script/cmodule/scan_adrp.ts#L6)
+2. 使用`CModule`嵌入c代码，对预匹配的结果用c直接进行筛选，避免经过上下文切换交由js过滤。 [@zsa233/frida-analykit-agent/src/elf/internal/scan_adrp.ts](https://github.com/ZSA233/frida-analykit/blob/v2.1.4/packages/frida-analykit-agent/src/elf/internal/scan_adrp.ts)
 
 ```c
 #include <glib.h>
@@ -505,91 +506,75 @@ gpointer scan(const GumAddress base_address,
 
 ```
 
-经过上面一轮优化后，100多m的`libmonochrome_64.so`的内存空间全范围扫描能控制在5s内，我认为这是在能容忍的范围。（优化前后有多大的差异可以尝试将[`AdrlXref.scanAdrl`](https://github.com/ZSA233/frida-analykit/blob/main/script/elf/xref.ts#L90)换成[`AdrlXref.scanAdrlSlow`](https://github.com/ZSA233/frida-analykit/blob/main/script/elf/xref.ts#L192)）
+经过上面一轮优化后，100多m的`libmonochrome_64.so`的内存空间全范围扫描能控制在5s内，我认为这是在能容忍的范围。（优化前后有多大的差异可以尝试对比 `AdrlXref.scanAdrl` 和 `AdrlXref.scanAdrlSlow`）
 
 
 ## 测试
 
 > 上面叭叭叭说一大堆，已经等不及看实际的效果了
 
-在测试验证阶段，我们点题回到`boringssl`来验证效果：[frida-analykit/blob/main/script/net/ssl.ts](https://github.com/ZSA233/frida-analykit/blob/main/script/net/ssl.ts#L122)
+在测试验证阶段，我们点题回到`boringssl`来验证效果：[@zsa233/frida-analykit-agent/src/ssl/ssl.ts](https://github.com/ZSA233/frida-analykit/blob/v2.1.4/packages/frida-analykit-agent/src/ssl/ssl.ts)
 
 
-- 针对boringssl的三个常见的场景：`okhttp/flutter/webview` 写了一个测试样本[app-release.apk](https://github.com/ZSA233/android-reverse-examples/blob/main/003_frida-analykit-ssl-log-secret/samples/app-release.apk)（[app样本代码](https://github.com/ZSA233/android-reverse-examples/tree/main/003_frida-analykit-ssl-log-secret/app)）
+- 针对boringssl的三个常见的场景：`okhttp/flutter/webview` 写了一个测试样本[app-release.apk](https://github.com/ZSA233/android-reverse-examples/blob/main/003_frida-analykit-static-linked-boringssl/samples/app-release.apk)（[app样本代码](https://github.com/ZSA233/android-reverse-examples/tree/main/003_frida-analykit-static-linked-boringssl/app)）
 
 
 <img src="./docs/004-测试样本app.png" alt="测试样本app" height="300" /><a name="图4">图4</a>
 
-- 按照[frida-analykit](https://github.com/ZSA233/frida-analykit.git)文档安装分析工具
+- 安装并固定当前示例使用的 frida-analykit v2.1.4：
 
-- 配置config.yml
-
-```yml
-
-# 样本app
-app: com.frida_analykit.static_linked_boringssl
-jsfile: _agent.js
-
-server:
-  servername: /data/local/tmp/frida-server
-  host: 127.0.0.1:6666
-  device: 
-
-agent:
-  datadir: ./data/
-  stdout: ./logs/outerr.log
-  stderr: ./logs/outerr.log
-
-
-script:
-  nettools:
-    # sslkey写出文件目录
-    ssl_log_secret: ./data/nettools/sslkey/
-
+```shell
+uv tool install "git+https://github.com/ZSA233/frida-analykit@v2.1.4"
+frida-analykit env create --frida-version 16.6.6 --name frida-16.6.6-v2.1.4
+frida-analykit env shell frida-16.6.6-v2.1.4
 ```
 
-- `npm run watch`启动脚本变动编译
+这里的 `16.6.6` 需要和设备端 `frida-server --version` 对齐；当前真机回归使用的是 `16.6.6`。
 
-- `./ptpython_spawn.sh` 启动脚本注入app
+- 安装 agent 依赖并准备配置：
+
+```shell
+npm install
+cp config.example.toml config.toml
+```
+
+按需修改 `config.toml` 中的 `server.path`、`server.host`、`server.device`。`script.nettools.output_dir` 默认是 `./data/nettools/`，本示例写出的 keylog 会按 tag 分到：
+
+- `./data/nettools/libssl/sslkey.log`
+- `./data/nettools/flutter/sslkey.log`
+- `./data/nettools/webview/sslkey.log`
+
+- 检查并启动设备端 server，然后注入：
+
+```shell
+frida-analykit doctor --config config.toml
+frida-analykit doctor fix --config config.toml
+frida-analykit server boot --config config.toml
+frida-analykit spawn --config config.toml --build --install
+```
+
+`index.ts` 会自动 hook `libssl.so`、`libflutter.so`，并监听 WebView 相关 so 的加载后再 hook，不需要再通过 REPL 手动调用。
+
+也可以直接执行自动化真机验证：
+
+```shell
+../tools/device_test_examples.py --examples 003 --frida-server-path /data/local/tmp/frida-server
+```
 
 <img src="./docs/005-开启frida-server和启动实时编译.png" alt="开启frida-server和启动实时编译" height="300" /><a name="图5">图5</a>
 
 
-- 通过下面的流程体验attach的流程
+- 如果需要在 REPL 中手动调试 attach 流程，可以用：
 
-> 我这里使用 REPL 来演示是为了更直观的演示注入的流程（在index.ts中写脚本找准时机注入也是没问题的）
+```shell
+frida-analykit spawn --config config.toml --build --install --repl
+```
 
-```sh
-# 下面`script.jsh()`是py用来指定代理js全局变量的方法
-# py是通过JsHandle来实现持有js层中的代理变量
-
-=================== frida-analykit ===================
-[jsfile]    _agent.js
-[update_at] 2025-04-25 16:01:36.531202
-======================================================
-# 获取js层的全局变量：Process
->>> proc = script.jsh('Process')
-# 获取js层的全局变量：SSLTools
->>> ssltools = script.jsh('SSLTools')
-# 调用 Process.findModuleByName('libflutter.so')，并把结果交由py的libssl变量代理
->>> libflutter = proc.findModuleByName('libflutter.so')
-# 打印 libflutter 的值(需要注意的是这里面的序列化依赖frida的rpc的实现，任何不能JSON序列化的对象都会报错)
->>> libflutter.value
-{'name': 'libflutter.so', 'base': '0x7c8e2d3000', 'size': 11325440, 'path': '/data/app/com.frida_analykit.static_linked_boringssl-m2yG6wqwVlJzh8_wwfz-9w==/base.apk!/lib/arm64-v8a/libflutter.so'}
-
-# attach [libssl.so]的boringssl-ssl_log_secret
->>> ssltools.attachBoringsslKeylogFunc({ 'libname': 'libssl.so' })
-<JsHandle: [undefined] __get__$$2>
-
-# attach [libflutter.so]的boringssl-ssl_log_secret
->>> ssltools.attachBoringsslKeylogFunc({ 'mod': libflutter })
-<JsHandle: [undefined] __get__$$3>
-
-# 在 attach webview之前，需要点击 <Webview打开> 来首次加载webview的elf，否则会提示找不到so
->>> ssltools.attachBoringsslKeylogFunc({ 'libname': 'libmonochrome_64.so' })
-<JsHandle: [undefined] __get__$$4>
-
-# 之后就可以按照《上篇》流程将生成的sslkey.log导入到wireshark抓包了
+```py
+proc = script.jsh("Process")
+ssltools = script.jsh("SSLTools")
+libflutter = proc.findModuleByName("libflutter.so")
+ssltools.attachBoringsslKeylogFunc({ "mod": libflutter, "tag": "flutter-manual" })
 ```
 
 <img src="./docs/006-注入三个场景的boringssl.png" alt="注入三个场景的boringssl" height="400" /><a name="图6">图6</a>

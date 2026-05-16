@@ -232,6 +232,24 @@ adb shell chmod u+x /data/local/tmp/frida-server
 ## 测试
 > [修复的测试结果如上图](#3-使用修复的frida-stalker后的跟踪现象)
 
+手动运行：
+
+```shell
+npm install
+npm run build
+FRIDA_HOST=127.0.0.1:27042 ./run_test_fix.sh
+```
+
+`run_test_fix.sh` 默认连接 `127.0.0.1:27042`，设备端需要提前启动已经合并 Stalker 修复的 `frida-server`。如果你的 server 仍然监听旧端口，可以通过 `FRIDA_HOST=127.0.0.1:6666` 覆盖。
+
+自动化真机验证：
+
+```shell
+../tools/device_test_examples.py --examples 001 --frida-server-path /data/local/tmp/frida-server
+```
+
+脚本会安装 `app-debug.apk`，启动指定的 patched `frida-server`，注入编译后的 `_agent.js`，点击“开始执行”，并验证返回值保持 `sum[1]` / `sum[100]` 交替。
+
 
 ## 资源链接
 > 0. [代码仓库](./)
